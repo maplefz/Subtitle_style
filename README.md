@@ -7,4 +7,4 @@
 
 只设置了所有行都为同一样式，如有更多需求，如隔行设置不同的字幕样式，请使用其他字幕软件修改或自行修改代码。
 
-![demo](https://maplefz.github.io/Subtitle_style/)
+[demo](https://maplefz.github.io/Subtitle_style/)
