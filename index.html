@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字幕样式修改</title>
+    <style>
+        /* 在这里添加您的 CSS 样式 */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #modifyButton,
+        #clearButton,
+        #fileInputLabel {
+            background-color: #4CAF50;
+            /* 绿色背景 */
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            /* 添加右边距，使按钮之间有间隔 */
+        }
+
+        #modifyButton:hover,
+        #clearButton:hover,
+        #fileInputLabel:hover {
+            background-color: #45a049;
+            /* 鼠标悬停时的颜色 */
+        }
+
+        #fileInput {
+            display: none;
+            /* 隐藏原始的文件输入控件 */
+        }
+
+        #fileName {
+            font-size: 16px;
+            vertical-align: middle;
+        }
+
+        #fileContent {
+            white-space: pre-wrap;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-top: 10px;
+            max-height: 600px;
+            overflow: auto;
+        }
+
+        #customStyleInput {
+            display: none;
+            /* 隐藏自定义样式输入框，默认不显示 */
+            margin-left: 10px;
+            width: 300px;
+            height: 30px;
+        }
+
+        #customStyleHint {
+            display: none;
+            /* 隐藏自定义样式提示信息 */
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        #resWidth {
+            width: 60px;
+            height: 30px;
+            font-size: 20px;
+        }
+
+        #resHeight {
+            width: 60px;
+            height: 30px;
+            font-size: 20px;
+        }
+
+        /* 您可以根据需要添加更多样式 */
+    </style>
+</head>
+
+<body>
+    <h1>字幕样式修改</h1>
+    <!-- 使用 label 元素作为自定义的文件选择按钮 -->
+    <label for="fileInput" id="fileInputLabel">选择字幕文件</label>
+    <!-- 在按钮右侧添加用于显示文件名的元素 -->
+    <span id="fileName"></span><br><br>
+    
+    <div>
+        <label>字幕分辨率：</label>
+        <label>宽：<input type="number" id="resWidth" value="1920"></label>
+        <label>高：<input type="number" id="resHeight" value="1080"></label>
+    </div><br>
+    
+    <div id="choose">
+        <span>设置样式</span>
+        <label><input type="radio" name="language" value="japanese" checked> 日语</label>
+        <label><input type="radio" name="language" value="english"> 英语</label>
+        <label><input type="radio" name="language" value="custom"> 自定义</label>
+        <input type="text" id="customStyleInput" placeholder="输入自定义样式">
+        <span id="customStyleHint">请完整输入样式代码，示例：[Style: 英文,Arial,42,&H00FFFFFF,&H000000FF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,1,2,0,2,10,10,10,1]。此示例中“英文”为字体的样式名称</span>
+    </div><br>
+    
+    <button id="modifyButton">转换</button>
+    <button id="clearButton">清除转换</button>
+    <a id="downloadLink" style="display: none;">点击这里下载修改后的文件</a>
+
+    <!-- 隐藏的文件输入控件 -->
+    <input type="file" id="fileInput" accept=".ass,.srt">
+
+    <!-- 内容区域 -->
+    <pre id="fileContent"></pre>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const modifyButton = document.getElementById('modifyButton');
+        const clearButton = document.getElementById('clearButton');
+        const fileContentPre = document.getElementById('fileContent');
+        const fileNameSpan = document.getElementById('fileName');
+        const downloadLink = document.getElementById('downloadLink');
+        const customStyleInput = document.getElementById('customStyleInput');
+        const customStyleHint = document.getElementById('customStyleHint');
+
+        let originalContent = ''; // 原始文件内容
+        let currentFileType = ''; // 保存当前文件类型（'ass'或'srt'）
+
+        // 当选择文件时，读取并显示文件内容
+        fileInput.addEventListener('change', function () {
+            const file = fileInput.files[0];
+
+            if (!file) {
+                fileContentPre.textContent = '';
+                originalContent = '';
+                currentFileType = '';
+                fileNameSpan.textContent = ''; // 清空文件名显示
+                downloadLink.style.display = 'none'; // 隐藏下载链接
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const content = e.target.result;
+                originalContent = content; // 保存原始内容
+                currentFileType = file.name.endsWith('.srt') ? 'srt' : 'ass';
+                fileContentPre.textContent = content;
+                downloadLink.style.display = 'none'; // 隐藏下载链接
+            };
+            reader.readAsText(file);
+
+            // 显示选择的文件名
+            fileNameSpan.textContent = `已选择文件：${file.name}`;
+        });
+
+        // 显示或隐藏自定义样式输入框和提示信息
+        document.querySelectorAll('input[name="language"]').forEach((radio) => {
+            radio.addEventListener('change', function () {
+                if (this.value === 'custom') {
+                    customStyleInput.style.display = 'inline';
+                    customStyleHint.style.display = 'block';
+                } else {
+                    customStyleInput.style.display = 'none';
+                    customStyleHint.style.display = 'none';
+                }
+            });
+        });
+
+        modifyButton.addEventListener('click', function () {
+            if (!originalContent) {
+                alert('请上传一个字幕文件！');
+                return;
+            }
+
+            let modifiedContent = originalContent; // 每次转换都从原始内容开始
+
+            // 如果是 SRT 文件，先转换为 ASS 格式
+            if (currentFileType === 'srt') {
+                modifiedContent = convertSRTtoASS(modifiedContent);
+            }
+
+            // 对 ASS 内容进行修改
+            modifiedContent = modifySubtitleContent(modifiedContent);
+
+            // 更新内容区域为修改后的内容
+            fileContentPre.textContent = modifiedContent;
+
+            const file = fileInput.files[0];
+            const outputFileName = file
+                ? file.name.replace(/(\.ass|\.srt)$/, '_done.ass')
+                : 'modified_subtitle.ass';
+
+            // 创建下载链接
+            const blob = new Blob([modifiedContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            downloadLink.href = url;
+            downloadLink.download = outputFileName;
+            downloadLink.style.display = '';
+            downloadLink.textContent = '点击这里下载修改后的文件';
+        });
+
+        // 添加“清除转换”按钮的事件处理函数
+        clearButton.addEventListener('click', function () {
+            if (!originalContent) {
+                alert('没有内容可清除，请先上传文件。');
+                return;
+            }
+
+            // 恢复显示原始内容
+            fileContentPre.textContent = originalContent;
+
+            // 隐藏下载链接
+            downloadLink.style.display = 'none';
+        });
+
+        function convertSRTtoASS(srtContent) {
+            // 构建 ASS 文件的头部信息
+            const assHeader = `[Script Info]
+; Script generated by Subtitle Modifier
+Title: Modified Subtitle
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+YCbCr Matrix: TV.601
+PlayResX: 640
+PlayResY: 480
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: 默认,Arial,20,&H00FFFFFF,&H000000FF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,1,2,0,2,10,10,10,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`;
+
+            // 将 SRT 内容转换为 ASS 的 Dialogue 行
+            const assEvents = srtContent
+                .split(/\r?\n\r?\n/)
+                .map((block) => {
+                    const lines = block.split(/\r?\n/);
+                    if (lines.length >= 3) {
+                        // 提取时间和文本
+                        const timeLine = lines[1];
+                        const textLines = lines
+                            .slice(2)
+                            .join('\\N')
+                            .replace(/<.*?>/g, '');
+                        const timeMatch = timeLine.match(
+                            /(\d{2}):(\d{2}):(\d{2}),(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2}),(\d{3})/
+                        );
+                        if (timeMatch) {
+                            const start =
+                                parseInt(timeMatch[1]) * 3600 +
+                                parseInt(timeMatch[2]) * 60 +
+                                parseInt(timeMatch[3]) +
+                                parseInt(timeMatch[4]) / 1000;
+                            const end =
+                                parseInt(timeMatch[5]) * 3600 +
+                                parseInt(timeMatch[6]) * 60 +
+                                parseInt(timeMatch[7]) +
+                                parseInt(timeMatch[8]) / 1000;
+                            const assStart = formatTime(start);
+                            const assEnd = formatTime(end);
+                            return `Dialogue: 0,${assStart},${assEnd},默认,,0,0,0,,${textLines}`;
+                        }
+                    }
+                    return '';
+                })
+                .filter((line) => line.length > 0)
+                .join('\n');
+
+            return assHeader + assEvents;
+        }
+
+        function formatTime(totalSeconds) {
+            const hours = Math.floor(totalSeconds / 3600)
+                .toString()
+                .padStart(1, '0');
+            const minutes = Math.floor((totalSeconds % 3600) / 60)
+                .toString()
+                .padStart(2, '0');
+            const seconds = Math.floor(totalSeconds % 60)
+                .toString()
+                .padStart(2, '0');
+            const centiseconds = Math.floor((totalSeconds % 1) * 100)
+                .toString()
+                .padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}.${centiseconds}`;
+        }
+
+        function modifySubtitleContent(content) {
+            const lines = content.split('\n');
+            let currentSection = '';
+            let isScriptInfoSection = false;
+            let addedAdditionalInfoScript = false;
+            let isStylesSection = false;
+            let isEventsSection = false;
+            
+            const resWidth = document.getElementById('resWidth').value;
+            const resHeight = document.getElementById('resHeight').value;
+
+            const additionalInfoScript = [
+                `PlayResX: ${resWidth}`,
+                `PlayResY: ${resHeight}`
+            ];
+
+            // 获取自定义样式并提取样式名
+            const styleCustom = customStyleInput.value; // 获取自定义样式
+            let customStyleName = ''; // 用于保存自定义样式的名称
+
+            if (styleCustom) {
+                const styleParts = styleCustom.split(',');
+                if (styleParts.length > 0) {
+                    customStyleName = styleParts[0].split(': ')[1]; // 提取样式名称
+                }
+            }
+
+            const styleJapanese =
+                'Style: 日文-双语,Hiragino Sans GB W3,42,&H00FFFFFF,&H000000FF,&H005E4004,&H005E4004,0,0,0,0,100,100,0,0,1,1,1,2,10,10,10,1';
+            const styleEnglish =
+                'Style: 英文-双语,宋体,42,&H00F2E992,&HFF0000FF,&H145E4004,&H965E4004,0,0,0,0,100,100,0,0,1,0,0,2,10,10,10,1';
+
+            // 获取所选择的语言
+            const language = document.querySelector(
+                'input[name="language"]:checked'
+            ).value;
+            const modifiedLines = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i];
+
+                if (line.startsWith('[')) {
+                    currentSection = line.trim();
+
+                    // 检查是否需要添加 additionalInfoScript
+                    if (
+                        currentSection !== '[Script Info]' &&
+                        isScriptInfoSection &&
+                        !addedAdditionalInfoScript
+                    ) {
+                        additionalInfoScript.forEach((info) =>
+                            modifiedLines.push(info)
+                        );
+                        addedAdditionalInfoScript = true;
+                        isScriptInfoSection = false;
+                    }
+                }
+
+                if (currentSection === '[Script Info]') {
+                    isScriptInfoSection = true;
+
+                    // 跳过已有的 PlayResX 和 PlayResY 行
+                    if (
+                        line.startsWith('PlayResX') ||
+                        line.startsWith('PlayResY')
+                    ) {
+                        continue;
+                    }
+
+                    // 检查 [Script Info] 部分的结束
+                    if (line.trim() === '') {
+                        if (!addedAdditionalInfoScript) {
+                            additionalInfoScript.forEach((info) =>
+                                modifiedLines.push(info)
+                            );
+                            addedAdditionalInfoScript = true;
+                        }
+                        isScriptInfoSection = false;
+                    }
+                }
+
+                if (currentSection === '[V4+ Styles]') {
+                    isStylesSection = true;
+                }
+
+                if (isStylesSection && !line.startsWith('[') && line.trim() === '') {
+                    if (language === 'japanese') {
+                        modifiedLines.push(styleJapanese);
+                    } else if (language === 'english') {
+                        modifiedLines.push(styleEnglish);
+                    } else if (language === 'custom' && styleCustom) {
+                        modifiedLines.push(styleCustom);
+                    }
+                    isStylesSection = false;
+                }
+
+                if (currentSection === '[Events]') {
+                    isEventsSection = true;
+
+                    // 处理 Dialogue 行
+                    if (line.startsWith('Dialogue:')) {
+                        // 移除 'Dialogue:' 前缀并分割字段
+                        let parts = line.substring('Dialogue:'.length).split(',');
+
+                        // 修改 Style 字段（索引为 3）
+                        if (parts.length > 3) {
+                            if (language === 'japanese') {
+                                parts[3] = '日文-双语';
+                            } else if (language === 'english') {
+                                parts[3] = '中文-双语';
+                            } else if (language === 'custom' && customStyleName) {
+                                parts[3] = customStyleName; // 使用自定义样式名
+                            }
+                        }
+
+                        // 重组行
+                        line = 'Dialogue:' + parts.join(',');
+                    }
+                }
+
+                modifiedLines.push(line);
+            }
+
+            // 如果文件以 [Script Info] 结束，没有空行或新节标志，需要在最后添加 additionalInfoScript
+            if (isScriptInfoSection && !addedAdditionalInfoScript) {
+                additionalInfoScript.forEach((info) => modifiedLines.push(info));
+            }
+
+            return modifiedLines.join('\n');
+        }
+    </script>
+</body>
+
+</html>
