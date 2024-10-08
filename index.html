@@ -86,22 +86,36 @@
         }
 
         /* 您可以根据需要添加更多样式 */
+        #fileInputLabelContainer {
+            display: inline-block;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        #fileInputLabelContainer.hover {
+            border-color: #4CAF50;
+            background-color: #f0fff0;
+        }
     </style>
 </head>
 
 <body>
     <h1>字幕样式修改</h1>
     <!-- 使用 label 元素作为自定义的文件选择按钮 -->
-    <label for="fileInput" id="fileInputLabel">选择字幕文件</label>
+    <div id="fileInputLabelContainer">
+        <label for="fileInput" id="fileInputLabel">选择或拖放字幕文件</label>
+    </div>
     <!-- 在按钮右侧添加用于显示文件名的元素 -->
     <span id="fileName"></span><br><br>
-    
+
     <div>
         <label>字幕分辨率：</label>
         <label>宽：<input type="number" id="resWidth" value="1920"></label>
         <label>高：<input type="number" id="resHeight" value="1080"></label>
     </div><br>
-    
+
     <div id="choose">
         <span>设置样式</span>
         <label><input type="radio" name="language" value="japanese" checked> 日语</label>
@@ -110,7 +124,7 @@
         <input type="text" id="customStyleInput" placeholder="输入自定义样式">
         <span id="customStyleHint">请完整输入样式代码，示例：[Style: 英文,Arial,42,&H00FFFFFF,&H000000FF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,1,2,0,2,10,10,10,1]。此示例中“英文”为字体的样式名称</span>
     </div><br>
-    
+
     <button id="modifyButton">转换</button>
     <button id="clearButton">清除转换</button>
     <a id="downloadLink" style="display: none;">点击这里下载修改后的文件</a>
@@ -123,6 +137,7 @@
 
     <script>
         const fileInput = document.getElementById('fileInput');
+        const fileInputLabelContainer = document.getElementById('fileInputLabelContainer');
         const modifyButton = document.getElementById('modifyButton');
         const clearButton = document.getElementById('clearButton');
         const fileContentPre = document.getElementById('fileContent');
@@ -136,29 +151,7 @@
 
         // 当选择文件时，读取并显示文件内容
         fileInput.addEventListener('change', function () {
-            const file = fileInput.files[0];
-
-            if (!file) {
-                fileContentPre.textContent = '';
-                originalContent = '';
-                currentFileType = '';
-                fileNameSpan.textContent = ''; // 清空文件名显示
-                downloadLink.style.display = 'none'; // 隐藏下载链接
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const content = e.target.result;
-                originalContent = content; // 保存原始内容
-                currentFileType = file.name.endsWith('.srt') ? 'srt' : 'ass';
-                fileContentPre.textContent = content;
-                downloadLink.style.display = 'none'; // 隐藏下载链接
-            };
-            reader.readAsText(file);
-
-            // 显示选择的文件名
-            fileNameSpan.textContent = `已选择文件：${file.name}`;
+            readFile(fileInput.files[0]);
         });
 
         // 显示或隐藏自定义样式输入框和提示信息
@@ -220,6 +213,39 @@
             // 隐藏下载链接
             downloadLink.style.display = 'none';
         });
+
+        // 拖放文件处理
+        fileInputLabelContainer.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            fileInputLabelContainer.classList.add('hover');
+        });
+
+        fileInputLabelContainer.addEventListener('dragleave', function () {
+            fileInputLabelContainer.classList.remove('hover');
+        });
+
+        fileInputLabelContainer.addEventListener('drop', function (e) {
+            e.preventDefault();
+            fileInputLabelContainer.classList.remove('hover');
+
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                readFile(file);
+            }
+        });
+
+        function readFile(file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const content = e.target.result;
+                originalContent = content; // 保存原始内容
+                currentFileType = file.name.endsWith('.srt') ? 'srt' : 'ass';
+                fileContentPre.textContent = content;
+                downloadLink.style.display = 'none'; // 隐藏下载链接
+                fileNameSpan.textContent = `已选择文件：${file.name}`;
+            };
+            reader.readAsText(file);
+        }
 
         function convertSRTtoASS(srtContent) {
             // 构建 ASS 文件的头部信息
@@ -303,7 +329,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             let addedAdditionalInfoScript = false;
             let isStylesSection = false;
             let isEventsSection = false;
-            
+
             const resWidth = document.getElementById('resWidth').value;
             const resHeight = document.getElementById('resHeight').value;
 
@@ -319,7 +345,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             if (styleCustom) {
                 const styleParts = styleCustom.split(',');
                 if (styleParts.length > 0) {
-                    customStyleName = styleParts[0].split(': ')[1]; // 提取样式名称
+                    customStyleName = styleParts[0].split(': ')[1]; // 提起样式名称
                 }
             }
 
